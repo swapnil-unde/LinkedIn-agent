@@ -1,6 +1,14 @@
 import json
 import os
+import re
+import sys
 import time
+from pathlib import Path
+
+# Allow: python agents/approval/agent.py (from project root)
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 
 import requests
 
@@ -12,14 +20,17 @@ from agents.approval.prompt import (
 from agents.linkedin.agent import post_to_linkedin
 from config import (
     DRAFTS_FILE,
+    IMAGES_DIR,
     TELEGRAM_API_BASE_URL,
     TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CHAT_ID,
     TELEGRAM_POLL_INTERVAL,
 )
 
 
 BOT_TOKEN = TELEGRAM_BOT_TOKEN
 POLL_INTERVAL = TELEGRAM_POLL_INTERVAL
+TELEGRAM_MAX_MESSAGE_LENGTH = 4096
 
 
 def load_drafts():
@@ -47,12 +58,151 @@ def telegram_post(method, payload):
 
 
 def send_telegram_message(chat_id, text):
-    telegram_post(
-        "sendMessage",
-        {
-            "chat_id": chat_id,
-            "text": text,
-        },
+    """Send text to Telegram, splitting if it exceeds the message limit."""
+    if not text:
+        return
+
+    for start in range(0, len(text), TELEGRAM_MAX_MESSAGE_LENGTH):
+        chunk = text[start : start + TELEGRAM_MAX_MESSAGE_LENGTH]
+        telegram_post(
+            "sendMessage",
+            {
+                "chat_id": chat_id,
+                "text": chunk,
+            },
+        )
+
+
+def read_draft_post(draft):
+    """Return topic and post body from the draft file."""
+    filename = draft.get("filename")
+    topic = draft.get("topic", "")
+
+    if not filename or not os.path.exists(filename):
+        return topic, None
+
+    with open(filename, "r", encoding="utf-8") as f:
+        return topic, f.read()
+
+
+def resolve_topic_id_for_photo(caption, drafts):
+    """Match an uploaded photo to a draft topic id."""
+    caption = (caption or "").strip()
+    if caption and caption in drafts:
+        return caption
+
+    pending = [
+        topic_id
+        for topic_id, draft in drafts.items()
+        if draft.get("status") == "pending"
+    ]
+    if len(pending) == 1:
+        return pending[0]
+
+    return None
+
+
+def download_telegram_photo(file_id, dest_path):
+    """Download a Telegram photo to a local file."""
+    response = requests.get(
+        telegram_url("getFile"),
+        params={"file_id": file_id},
+        timeout=30,
+    )
+    response.raise_for_status()
+    file_path = response.json()["result"]["file_path"]
+
+    file_url = f"{TELEGRAM_API_BASE_URL}/file/bot{BOT_TOKEN}/{file_path}"
+    image_response = requests.get(file_url, timeout=60)
+    image_response.raise_for_status()
+
+    os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+    with open(dest_path, "wb") as f:
+        f.write(image_response.content)
+
+
+def save_pending_image(topic_id, draft, file_id):
+    """Store uploaded Telegram image on disk and link it to the draft."""
+    topic = draft.get("topic", topic_id)
+    safe_topic = re.sub(r"[^a-zA-Z0-9_-]", "_", topic)
+    pending_path = os.path.join(
+        IMAGES_DIR,
+        f"{safe_topic}_pending_{topic_id}.jpg",
+    )
+
+    download_telegram_photo(file_id, pending_path)
+
+    old_pending = draft.get("pending_image_path")
+    if old_pending and old_pending != pending_path and os.path.exists(old_pending):
+        os.remove(old_pending)
+
+    draft["pending_image_path"] = pending_path
+    return pending_path
+
+
+def finalize_draft_image(topic_id, draft):
+    """Move pending upload to final image filename on approve."""
+    pending_path = draft.get("pending_image_path")
+    if not pending_path or not os.path.exists(pending_path):
+        return None, (
+            f"No image uploaded for topic {topic_id}.\n\n"
+            "Send your image to this chat first, then press Approve."
+        )
+
+    topic = draft.get("topic", topic_id)
+    safe_topic = re.sub(r"[^a-zA-Z0-9_-]", "_", topic)
+    extension = Path(pending_path).suffix or ".jpg"
+    final_path = os.path.join(
+        IMAGES_DIR,
+        f"{safe_topic}_{time.strftime('%Y%m%d_%H%M%S')}{extension}",
+    )
+
+    os.makedirs(IMAGES_DIR, exist_ok=True)
+    os.replace(pending_path, final_path)
+
+    draft["image_path"] = final_path
+    draft.pop("pending_image_path", None)
+    return final_path, None
+
+
+def handle_incoming_photo(message, chat_id):
+    """Receive image from Telegram and attach it to a pending draft."""
+    if str(chat_id) != str(TELEGRAM_CHAT_ID):
+        return
+
+    photos = message.get("photo") or []
+    if not photos:
+        return
+
+    drafts = load_drafts()
+    topic_id = resolve_topic_id_for_photo(message.get("caption"), drafts)
+    if not topic_id:
+        send_telegram_message(
+            chat_id,
+            "Could not match this image to a draft.\n\n"
+            "Send the photo with caption = topic id (example: 1), "
+            "or keep only one pending draft.",
+        )
+        return
+
+    draft = drafts.get(topic_id)
+    if not draft or draft.get("status") != "pending":
+        send_telegram_message(
+            chat_id,
+            f"Topic {topic_id} is not waiting for approval, so the image was ignored.",
+        )
+        return
+
+    file_id = photos[-1]["file_id"]
+    pending_path = save_pending_image(topic_id, draft, file_id)
+    drafts[topic_id] = draft
+    save_drafts(drafts)
+
+    send_telegram_message(
+        chat_id,
+        f"Image received for topic {topic_id}.\n\n"
+        f"Saved temporarily to:\n{pending_path}\n\n"
+        "Press Approve when you are ready.",
     )
 
 
@@ -81,11 +231,19 @@ def publish_draft_to_linkedin(topic_id, draft):
     with open(filename, "r", encoding="utf-8") as f:
         post_content = f.read()
 
+    image_path = draft.get("image_path")
+    if not image_path or not os.path.exists(image_path):
+        return False, (
+            f"No image found for topic {topic_id}. "
+            "Upload an image to Telegram before pressing Approve."
+        )
+
     print(f"Reading post from: {filename}")
     print(f"Topic: {topic}")
+    print(f"Image: {image_path}")
     print("Sending approved post to agents.linkedin.agent.post_to_linkedin...")
 
-    if post_to_linkedin(post_content):
+    if post_to_linkedin(post_content, image_path=image_path, image_alt_text=topic):
         return True, ""
 
     return False, "LinkedIn posting failed. Check the LinkedIn agent output for the API response."
@@ -105,7 +263,16 @@ def handle_approval(topic_id, chat_id, message_id):
         send_telegram_message(chat_id, f"Topic {topic_id} was already posted to LinkedIn.")
         return
 
+    image_path, image_error = finalize_draft_image(topic_id, draft)
+    if image_error:
+        send_telegram_message(chat_id, image_error)
+        return
+
+    drafts[topic_id] = draft
+    save_drafts(drafts)
+
     success, error_message = publish_draft_to_linkedin(topic_id, draft)
+    topic_name = draft.get("topic", topic_id)
 
     if success:
         draft["status"] = "posted"
@@ -116,7 +283,7 @@ def handle_approval(topic_id, chat_id, message_id):
         clear_approval_buttons(chat_id, message_id)
         send_telegram_message(
             chat_id,
-            approval_success_message(topic_id, draft.get("topic", topic_id)),
+            approval_success_message(topic_id, topic_name, image_path),
         )
         return
 
@@ -126,7 +293,10 @@ def handle_approval(topic_id, chat_id, message_id):
     drafts[topic_id] = draft
     save_drafts(drafts)
 
-    send_telegram_message(chat_id, approval_failure_message(topic_id, error_message))
+    send_telegram_message(
+        chat_id,
+        approval_failure_message(topic_id, error_message),
+    )
 
 
 def handle_rejection(topic_id, chat_id, message_id):
@@ -161,6 +331,11 @@ def run_approval_agent():
 
             for update in updates.get("result", []):
                 offset = update["update_id"] + 1
+
+                message = update.get("message")
+                if message and message.get("photo"):
+                    handle_incoming_photo(message, message["chat"]["id"])
+                    continue
 
                 if "callback_query" not in update:
                     continue

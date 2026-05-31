@@ -1,9 +1,12 @@
-def approval_success_message(topic_id, topic):
-    return (
+def approval_success_message(topic_id, topic, image_path=None):
+    message = (
         f"Topic {topic_id} approved.\n\n"
         f"{topic}\n\n"
         "Post published to LinkedIn."
     )
+    if image_path:
+        message += f"\n\nImage saved:\n{image_path}"
+    return message
 
 
 def approval_failure_message(topic_id, error_message):
