@@ -1,0 +1,11 @@
+{
+  "topicId": {
+    "S": "1"
+  },
+  "topicName": {
+    "S": "AWS Bedrock Agents"
+  },
+  "status": {
+    "S": "ACTIVE"
+  }
+}

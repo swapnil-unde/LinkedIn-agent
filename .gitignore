@@ -1,0 +1,14 @@
+.env
+__pycache__/
+*.pyc
+venv/
+linkedin_credentials.json
+_drafts.json
+/post/
+/research/
+agents/writer/post/*.md
+agents/researcher/research/*.md
+agents/image/images/*
+!agents/writer/post/.gitkeep
+!agents/researcher/research/.gitkeep
+!agents/image/images/.gitkeep

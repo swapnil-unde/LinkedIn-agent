@@ -1,0 +1,2 @@
+POST_LOG_START = "========== LINKEDIN POST CONTENT START =========="
+POST_LOG_END = "========== LINKEDIN POST CONTENT END =========="
