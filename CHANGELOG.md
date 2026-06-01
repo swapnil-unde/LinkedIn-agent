@@ -11,10 +11,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
-- (nothing yet — add your next changes here)
+- Telegram commands on approval bot: `/next`, `/generate`, `/status`, `/help` — trigger next active topic without cron or `start.py`
+- Optional: `/next 17` to force a specific active topic id
 
 ### Changed
-- (nothing yet)
+- Single long-running process: approval agent handles commands, photos, and Approve/Reject (no separate scheduled `start.py` required)
 
 ### Fixed
 - (nothing yet)

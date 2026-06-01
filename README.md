@@ -27,12 +27,23 @@ flowchart TD
     M --> N[Update topics.json status to posted]
 ```
 
-### Two processes to run locally
+### Run the bot (one process)
 
-| Command | Role |
-|---------|------|
-| `python start.py` | **Once per post** — research → write → Telegram draft |
-| `python agents/approval/agent.py` | **Always on** — photos, Approve/Reject, LinkedIn publish |
+```bash
+python agents/approval/agent.py
+```
+
+Run **only one instance** per bot token.
+
+| How to start a new draft | What happens |
+|--------------------------|--------------|
+| Send **`/next`** in Telegram | Research → write → draft + image prompt sent to you |
+| Or `python start.py` | Same pipeline (optional, without Telegram commands) |
+
+| After draft | Action |
+|-------------|--------|
+| Upload image | Send photo to the bot |
+| Publish | Press **Approve** on the draft message |
 
 ---
 
@@ -111,30 +122,29 @@ The pipeline picks the **first `active` row top-to-bottom** (line by line). Afte
 
 ## Usage
 
-### Generate a new draft
+### Telegram commands (from your chat only)
+
+| Command | Action |
+|---------|--------|
+| `/next` or `/generate` | Run pipeline for **first active** topic in `topics.json` |
+| `/next 17` | Run pipeline for topic id **17** (must be `active`) |
+| `/status` | Show which topic is next |
+| `/help` | List commands |
+
+### Typical workflow
+
+1. Send **`/next`** to the bot.  
+2. You receive: post draft (Approve/Reject) + image prompt.  
+3. Create infographic, **upload photo** to the bot.  
+4. Press **Approve** → post + image go to LinkedIn; topic marked `posted`.
+
+### Optional: generate without Telegram command
 
 ```bash
 python start.py
 ```
 
-You receive on Telegram:
-
-1. Post text with **Approve** / **Reject** buttons  
-2. A second message with the **image prompt** (create infographic manually, e.g. Gemini)
-
-### Upload image and approve
-
-1. Send your image to the bot (caption = topic id, e.g. `17`, or only one pending draft).  
-2. Wait for: *"Image received… Press Approve when ready."*  
-3. Press **Approve** → image saved under `agents/image/images/` → full post + image published to LinkedIn.
-
-### Run approval bot (required)
-
-```bash
-python agents/approval/agent.py
-```
-
-Run **only one instance** per bot token (avoids Telegram `409 Conflict`).
+Same as `/next`, but run from the terminal instead of Telegram.
 
 ---
 
@@ -191,9 +201,24 @@ LinkedIn silently truncates commentary if special characters are not escaped (`(
 
 ## Security
 
-- Never commit `.env` or API keys.  
-- Add `test_gemini_image.py` to `.gitignore` if you hardcode keys there.  
-- Rotate tokens if exposed.
+### Telegram bot access
+
+The approval agent only acts on updates from **`TELEGRAM_CHAT_ID`** in `.env`:
+
+| Action | Strangers (other chats) |
+|--------|-------------------------|
+| `/next`, `/status`, etc. | Blocked — “Unauthorized chat.” |
+| Photo uploads | Ignored |
+| Approve / Reject buttons | Blocked — alert “Unauthorized.” |
+
+Drafts are **sent only** to `TELEGRAM_CHAT_ID`, so random users never see your post text or Approve buttons unless you add the bot to a **group** or forward messages.
+
+**Recommendations**
+
+- Use a **private chat** with the bot (your user id = chat id). Do not add the bot to public groups.
+- Do not share the bot username publicly; anyone can still `/start` the bot, but they cannot trigger your pipeline or publish to LinkedIn.
+- In [@BotFather](https://t.me/BotFather), you can disable group adds if you want (`/setjoingroups` → Disable).
+- Never commit `.env` or `TELEGRAM_BOT_TOKEN`. Rotate the token in BotFather if it leaks.
 
 ---
 

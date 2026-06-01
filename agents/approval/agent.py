@@ -26,12 +26,34 @@ from config import (
     TELEGRAM_CHAT_ID,
     TELEGRAM_POLL_INTERVAL,
 )
-from topics_store import STATUS_POSTED, STATUS_REJECTED, update_topic_status
+from topics_store import (
+    STATUS_POSTED,
+    STATUS_REJECTED,
+    get_active_topic,
+    get_next_active_topic,
+    update_topic_status,
+)
 
 
 BOT_TOKEN = TELEGRAM_BOT_TOKEN
 POLL_INTERVAL = TELEGRAM_POLL_INTERVAL
 TELEGRAM_MAX_MESSAGE_LENGTH = 4096
+
+PIPELINE_COMMANDS = {"/next", "/generate", "/new"}
+_pipeline_running = False
+
+HELP_MESSAGE = """LinkedIn Agent commands
+
+/next — Research + write next active topic and send draft here
+/generate — Same as /next
+/status — Show next active topic in topics.json
+/help — Show this message
+
+Workflow after /next:
+1. Create image from the image prompt message
+2. Upload photo here (caption = topic id if needed)
+3. Press Approve on the draft message
+"""
 
 
 def load_drafts():
@@ -166,9 +188,111 @@ def finalize_draft_image(topic_id, draft):
     return final_path, None
 
 
+def is_authorized_chat(chat_id):
+    return str(chat_id) == str(TELEGRAM_CHAT_ID)
+
+
+def parse_command(text):
+    if not text or not text.strip().startswith("/"):
+        return None, []
+
+    parts = text.strip().split()
+    command = parts[0].split("@")[0].lower()
+    return command, parts[1:]
+
+
+def handle_pipeline_command(chat_id, topic_id=None):
+    """Run research → writer → Telegram draft for the next (or given) active topic."""
+    global _pipeline_running
+
+    if _pipeline_running:
+        send_telegram_message(
+            chat_id,
+            "Pipeline is already running. Wait for it to finish.",
+        )
+        return
+
+    from agents.researcher.agent import run_research_agent
+
+    try:
+        if topic_id is None:
+            preview = get_next_active_topic()
+            topic_id = preview["topicId"]
+            topic_name = preview["topicName"]
+        else:
+            preview = get_active_topic(topic_id)
+            topic_name = preview["topicName"]
+
+        send_telegram_message(
+            chat_id,
+            f"Starting pipeline for topic {topic_id}: {topic_name}\n\n"
+            "This may take a minute (Bedrock research + post generation)...",
+        )
+
+        _pipeline_running = True
+        run_research_agent(topic_id=topic_id)
+        send_telegram_message(
+            chat_id,
+            f"Draft ready for topic {topic_id}: {topic_name}\n\n"
+            "1. Check the post message above\n"
+            "2. Create image from the image prompt\n"
+            "3. Upload photo here, then press Approve",
+        )
+    except LookupError as exc:
+        send_telegram_message(chat_id, f"No topic available.\n\n{exc}")
+    except ValueError as exc:
+        send_telegram_message(chat_id, f"Cannot run pipeline.\n\n{exc}")
+    except Exception as exc:
+        send_telegram_message(chat_id, f"Pipeline failed.\n\n{exc}")
+        print(f"Pipeline error: {exc}")
+    finally:
+        _pipeline_running = False
+
+
+def handle_status_command(chat_id):
+    try:
+        topic = get_next_active_topic()
+        send_telegram_message(
+            chat_id,
+            f"Next active topic:\n"
+            f"ID: {topic['topicId']}\n"
+            f"Name: {topic['topicName']}\n\n"
+            "Send /next to generate the draft.",
+        )
+    except LookupError as exc:
+        send_telegram_message(chat_id, f"No active topics left.\n\n{exc}")
+
+
+def handle_command_message(message, chat_id):
+    """Handle Telegram text commands. Returns True if message was a command."""
+    if not is_authorized_chat(chat_id):
+        if message.get("text", "").strip().startswith("/"):
+            send_telegram_message(chat_id, "Unauthorized chat.")
+        return bool(message.get("text", "").strip().startswith("/"))
+
+    command, args = parse_command(message.get("text", ""))
+    if not command:
+        return False
+
+    if command in ("/help", "/start"):
+        send_telegram_message(chat_id, HELP_MESSAGE)
+    elif command == "/status":
+        handle_status_command(chat_id)
+    elif command in PIPELINE_COMMANDS:
+        topic_id = args[0] if args else None
+        handle_pipeline_command(chat_id, topic_id=topic_id)
+    else:
+        send_telegram_message(
+            chat_id,
+            f"Unknown command: {command}\n\nSend /help for available commands.",
+        )
+
+    return True
+
+
 def handle_incoming_photo(message, chat_id):
     """Receive image from Telegram and attach it to a pending draft."""
-    if str(chat_id) != str(TELEGRAM_CHAT_ID):
+    if not is_authorized_chat(chat_id):
         return
 
     photos = message.get("photo") or []
@@ -342,6 +466,7 @@ def run_approval_agent():
     offset = None
     print("Starting Telegram Approval Agent...")
     print("Run only ONE approval agent at a time for this bot token.")
+    print("Telegram commands: /next /generate /status /help")
 
     while True:
         try:
@@ -366,9 +491,13 @@ def run_approval_agent():
                 offset = update["update_id"] + 1
 
                 message = update.get("message")
-                if message and message.get("photo"):
-                    handle_incoming_photo(message, message["chat"]["id"])
-                    continue
+                if message:
+                    chat_id = message["chat"]["id"]
+                    if handle_command_message(message, chat_id):
+                        continue
+                    if message.get("photo"):
+                        handle_incoming_photo(message, chat_id)
+                        continue
 
                 if "callback_query" not in update:
                     continue
@@ -378,6 +507,18 @@ def run_approval_agent():
                 message_id = callback["message"]["message_id"]
                 chat_id = callback["message"]["chat"]["id"]
                 data = callback["data"]
+
+                if not is_authorized_chat(chat_id):
+                    print(f"Ignored callback from unauthorized chat {chat_id}")
+                    telegram_post(
+                        "answerCallbackQuery",
+                        {
+                            "callback_query_id": callback_id,
+                            "text": "Unauthorized.",
+                            "show_alert": True,
+                        },
+                    )
+                    continue
 
                 print(f"Received callback: {data}")
                 telegram_post(
