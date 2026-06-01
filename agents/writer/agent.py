@@ -9,6 +9,7 @@ from agents.linkedin.agent import clean_linkedin_formatting
 from agents.telegram.agent import send_for_approval
 from agents.writer.prompt import build_linkedin_post_prompt
 from config import AWS_REGION, BEDROCK_TEXT_MODEL_ID, DRAFTS_FILE, POST_DIR
+from topics_store import get_next_topic_in_series
 
 
 bedrock = boto3.client(
@@ -32,7 +33,13 @@ def save_drafts(drafts):
 
 
 def generate_linkedin_post(topic_id, topic, research):
-    prompt = build_linkedin_post_prompt(research)
+    next_topic = get_next_topic_in_series(topic_id) or "the next topic in this series"
+    prompt = build_linkedin_post_prompt(
+        research=research,
+        topic_name=topic,
+        post_number=topic_id,
+        next_topic_name=next_topic,
+    )
 
     response = bedrock.converse(
         modelId=BEDROCK_TEXT_MODEL_ID,
@@ -49,6 +56,7 @@ def generate_linkedin_post(topic_id, topic, research):
     )
 
     post = clean_linkedin_formatting(response["output"]["message"]["content"][0]["text"])
+    print(f"Generated post length: {len(post)} characters")
     safe_topic = re.sub(r"[^a-zA-Z0-9_-]", "_", topic)
 
     os.makedirs(POST_DIR, exist_ok=True)

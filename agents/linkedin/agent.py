@@ -13,6 +13,7 @@ from config import (
     LINKEDIN_VERSION,
 )
 from agents.linkedin.prompt import POST_LOG_END, POST_LOG_START
+from agents.linkedin.text_format import escape_linkedin_commentary
 
 
 LINKEDIN_POSTS_URL = f"{LINKEDIN_API_URL}/posts"
@@ -118,9 +119,13 @@ def upload_image_to_linkedin(image_path, alt_text=""):
 
 
 def build_post_payload(post_content, image_urn=None, alt_text=""):
+    commentary = escape_linkedin_commentary(post_content)
+    if commentary != post_content:
+        print("LinkedIn little-text escaping applied (parentheses, #, *, etc.).")
+
     payload = {
         "author": f"urn:li:person:{LINKEDIN_PERSON_ID}",
-        "commentary": post_content,
+        "commentary": commentary,
         "visibility": "PUBLIC",
         "distribution": {
             "feedDistribution": "MAIN_FEED",

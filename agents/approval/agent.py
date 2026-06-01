@@ -26,6 +26,7 @@ from config import (
     TELEGRAM_CHAT_ID,
     TELEGRAM_POLL_INTERVAL,
 )
+from topics_store import STATUS_POSTED, STATUS_REJECTED, update_topic_status
 
 
 BOT_TOKEN = TELEGRAM_BOT_TOKEN
@@ -281,6 +282,7 @@ def handle_approval(topic_id, chat_id, message_id):
         save_drafts(drafts)
 
         clear_approval_buttons(chat_id, message_id)
+        update_topic_status(topic_id, STATUS_POSTED)
         send_telegram_message(
             chat_id,
             approval_success_message(topic_id, topic_name, image_path),
@@ -308,7 +310,26 @@ def handle_rejection(topic_id, chat_id, message_id):
     save_drafts(drafts)
 
     clear_approval_buttons(chat_id, message_id)
+    try:
+        update_topic_status(topic_id, STATUS_REJECTED)
+    except LookupError as exc:
+        print(f"Warning: {exc}")
     send_telegram_message(chat_id, rejection_message(topic_id))
+
+
+def ensure_telegram_polling_mode():
+    """
+    Use getUpdates (polling). Clear webhook and avoid 409 conflicts with other clients.
+    """
+    try:
+        requests.post(
+            telegram_url("deleteWebhook"),
+            json={"drop_pending_updates": False},
+            timeout=30,
+        )
+        print("Telegram polling mode ready (webhook cleared).")
+    except requests.RequestException as exc:
+        print(f"Warning: could not clear Telegram webhook: {exc}")
 
 
 def run_approval_agent():
@@ -316,8 +337,11 @@ def run_approval_agent():
         print("Error: TELEGRAM_BOT_TOKEN not configured in .env")
         return
 
+    ensure_telegram_polling_mode()
+
     offset = None
     print("Starting Telegram Approval Agent...")
+    print("Run only ONE approval agent at a time for this bot token.")
 
     while True:
         try:
@@ -326,6 +350,15 @@ def run_approval_agent():
                 params["offset"] = offset
 
             response = requests.get(telegram_url("getUpdates"), params=params, timeout=30)
+            if response.status_code == 409:
+                print(
+                    "Telegram 409 Conflict: another process is polling this bot. "
+                    "Stop other terminals/servers running the approval agent."
+                )
+                ensure_telegram_polling_mode()
+                time.sleep(5)
+                continue
+
             response.raise_for_status()
             updates = response.json()
 
@@ -365,6 +398,16 @@ def run_approval_agent():
                     handle_rejection(topic_id, chat_id, message_id)
 
             time.sleep(POLL_INTERVAL)
+        except requests.HTTPError as exc:
+            if exc.response is not None and exc.response.status_code == 409:
+                print(
+                    "Telegram 409 Conflict: close duplicate approval agent instances, then retrying..."
+                )
+                ensure_telegram_polling_mode()
+                time.sleep(5)
+                continue
+            print(f"Error: {exc}")
+            time.sleep(5)
         except Exception as exc:
             print(f"Error: {exc}")
             time.sleep(5)

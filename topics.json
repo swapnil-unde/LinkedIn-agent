@@ -1,11 +1,532 @@
-{
-  "topicId": {
-    "S": "1"
+[
+  {
+    "topicId": "1",
+    "topicName": "What is Artificial Intelligence",
+    "status": "posted"
   },
-  "topicName": {
-    "S": "AWS Bedrock Agents"
+  {
+    "topicId": "2",
+    "topicName": "Types of AI (ANI, AGI, ASI)",
+    "status": "posted"
   },
-  "status": {
-    "S": "ACTIVE"
+  {
+    "topicId": "3",
+    "topicName": "Machine Learning vs Deep Learning vs Generative AI",
+    "status": "posted"
+  },
+  {
+    "topicId": "4",
+    "topicName": "How AI Models Learn",
+    "status": "posted"
+  },
+  {
+    "topicId": "5",
+    "topicName": "Training vs Inference",
+    "status": "posted"
+  },
+  {
+    "topicId": "6",
+    "topicName": "Supervised vs Unsupervised Learning",
+    "status": "posted"
+  },
+  {
+    "topicId": "7",
+    "topicName": "Neural Networks Basics",
+    "status": "posted"
+  },
+  {
+    "topicId": "8",
+    "topicName": "Activation Functions",
+    "status": "posted"
+  },
+  {
+    "topicId": "9",
+    "topicName": "Overfitting vs Underfitting",
+    "status": "posted"
+  },
+  {
+    "topicId": "10",
+    "topicName": "Real-world AI Applications",
+    "status": "posted"
+  },
+  {
+    "topicId": "11",
+    "topicName": "What is NLP",
+    "status": "posted"
+  },
+  {
+    "topicId": "12",
+    "topicName": "Text Preprocessing",
+    "status": "posted"
+  },
+  {
+    "topicId": "13",
+    "topicName": "Tokenization",
+    "status": "posted"
+  },
+  {
+    "topicId": "14",
+    "topicName": "Stop Words",
+    "status": "posted"
+  },
+  {
+    "topicId": "15",
+    "topicName": "Stemming vs Lemmatization",
+    "status": "posted"
+  },
+  {
+    "topicId": "16",
+    "topicName": "Bag of Words",
+    "status": "posted"
+  },
+  {
+    "topicId": "17",
+    "topicName": "TF-IDF",
+    "status": "posted"
+  },
+  {
+    "topicId": "18",
+    "topicName": "Word Embeddings",
+    "status": "posted"
+  },
+  {
+    "topicId": "19",
+    "topicName": "Contextual Embeddings",
+    "status": "posted"
+  },
+  {
+    "topicId": "20",
+    "topicName": "Semantic Similarity",
+    "status": "active"
+  },
+  {
+    "topicId": "21",
+    "topicName": "What are LLMs",
+    "status": "active"
+  },
+  {
+    "topicId": "22",
+    "topicName": "Evolution of Language Models",
+    "status": "active"
+  },
+  {
+    "topicId": "23",
+    "topicName": "Transformer Architecture",
+    "status": "active"
+  },
+  {
+    "topicId": "24",
+    "topicName": "Attention Mechanism",
+    "status": "active"
+  },
+  {
+    "topicId": "25",
+    "topicName": "Self Attention",
+    "status": "active"
+  },
+  {
+    "topicId": "26",
+    "topicName": "Encoder vs Decoder",
+    "status": "active"
+  },
+  {
+    "topicId": "27",
+    "topicName": "Pretraining",
+    "status": "active"
+  },
+  {
+    "topicId": "28",
+    "topicName": "Fine Tuning",
+    "status": "active"
+  },
+  {
+    "topicId": "29",
+    "topicName": "Instruction Tuning",
+    "status": "active"
+  },
+  {
+    "topicId": "30",
+    "topicName": "RLHF (Reinforcement Learning with Human Feedback)",
+    "status": "active"
+  },
+  {
+    "topicId": "31",
+    "topicName": "Example Models: GPT, Llama, Claude",
+    "status": "active"
+  },
+  {
+    "topicId": "32",
+    "topicName": "Token Limits",
+    "status": "active"
+  },
+  {
+    "topicId": "33",
+    "topicName": "Context Window",
+    "status": "active"
+  },
+  {
+    "topicId": "34",
+    "topicName": "Hallucinations in LLMs",
+    "status": "active"
+  },
+  {
+    "topicId": "35",
+    "topicName": "LLM Benchmarks",
+    "status": "active"
+  },
+  {
+    "topicId": "36",
+    "topicName": "Open Source vs Closed LLMs",
+    "status": "active"
+  },
+  {
+    "topicId": "37",
+    "topicName": "What is Prompt Engineering",
+    "status": "active"
+  },
+  {
+    "topicId": "38",
+    "topicName": "Zero Shot Prompting",
+    "status": "active"
+  },
+  {
+    "topicId": "39",
+    "topicName": "Few Shot Prompting",
+    "status": "active"
+  },
+  {
+    "topicId": "40",
+    "topicName": "Chain of Thought Prompting",
+    "status": "active"
+  },
+  {
+    "topicId": "41",
+    "topicName": "Role Prompting",
+    "status": "active"
+  },
+  {
+    "topicId": "42",
+    "topicName": "Prompt Templates",
+    "status": "active"
+  },
+  {
+    "topicId": "43",
+    "topicName": "System Prompts",
+    "status": "active"
+  },
+  {
+    "topicId": "44",
+    "topicName": "Prompt Injection",
+    "status": "active"
+  },
+  {
+    "topicId": "45",
+    "topicName": "Prompt Optimization",
+    "status": "active"
+  },
+  {
+    "topicId": "46",
+    "topicName": "Best Prompt Engineering Practices",
+    "status": "active"
+  },
+  {
+    "topicId": "47",
+    "topicName": "What are Embeddings",
+    "status": "active"
+  },
+  {
+    "topicId": "48",
+    "topicName": "Vector Representation",
+    "status": "active"
+  },
+  {
+    "topicId": "49",
+    "topicName": "Semantic Search",
+    "status": "active"
+  },
+  {
+    "topicId": "50",
+    "topicName": "Cosine Similarity",
+    "status": "active"
+  },
+  {
+    "topicId": "51",
+    "topicName": "Vector Databases",
+    "status": "active"
+  },
+  {
+    "topicId": "52",
+    "topicName": "Tools: Pinecone, FAISS",
+    "status": "active"
+  },
+  {
+    "topicId": "53",
+    "topicName": "Indexing Vectors",
+    "status": "active"
+  },
+  {
+    "topicId": "54",
+    "topicName": "Metadata Filtering",
+    "status": "active"
+  },
+  {
+    "topicId": "55",
+    "topicName": "Hybrid Search",
+    "status": "active"
+  },
+  {
+    "topicId": "56",
+    "topicName": "Embedding Models",
+    "status": "active"
+  },
+  {
+    "topicId": "57",
+    "topicName": "Embedding Use Cases",
+    "status": "active"
+  },
+  {
+    "topicId": "58",
+    "topicName": "What is RAG",
+    "status": "active"
+  },
+  {
+    "topicId": "59",
+    "topicName": "Why RAG is Needed",
+    "status": "active"
+  },
+  {
+    "topicId": "60",
+    "topicName": "RAG Architecture",
+    "status": "active"
+  },
+  {
+    "topicId": "61",
+    "topicName": "Document Chunking",
+    "status": "active"
+  },
+  {
+    "topicId": "62",
+    "topicName": "Embedding Generation",
+    "status": "active"
+  },
+  {
+    "topicId": "63",
+    "topicName": "Vector Search",
+    "status": "active"
+  },
+  {
+    "topicId": "64",
+    "topicName": "Context Retrieval",
+    "status": "active"
+  },
+  {
+    "topicId": "65",
+    "topicName": "Prompt Augmentation",
+    "status": "active"
+  },
+  {
+    "topicId": "66",
+    "topicName": "RAG Pipeline",
+    "status": "active"
+  },
+  {
+    "topicId": "67",
+    "topicName": "Frameworks: LangChain, LlamaIndex",
+    "status": "active"
+  },
+  {
+    "topicId": "68",
+    "topicName": "Hybrid RAG",
+    "status": "active"
+  },
+  {
+    "topicId": "69",
+    "topicName": "Multi-document RAG",
+    "status": "active"
+  },
+  {
+    "topicId": "70",
+    "topicName": "Streaming Responses",
+    "status": "active"
+  },
+  {
+    "topicId": "71",
+    "topicName": "RAG Evaluation",
+    "status": "active"
+  },
+  {
+    "topicId": "72",
+    "topicName": "RAG Optimization",
+    "status": "active"
+  },
+  {
+    "topicId": "73",
+    "topicName": "Real-world RAG Applications",
+    "status": "active"
+  },
+  {
+    "topicId": "74",
+    "topicName": "What is Multimodal AI",
+    "status": "active"
+  },
+  {
+    "topicId": "75",
+    "topicName": "Text to Image Models",
+    "status": "active"
+  },
+  {
+    "topicId": "76",
+    "topicName": "Diffusion Models",
+    "status": "active"
+  },
+  {
+    "topicId": "77",
+    "topicName": "Image Captioning",
+    "status": "active"
+  },
+  {
+    "topicId": "78",
+    "topicName": "Video Generation",
+    "status": "active"
+  },
+  {
+    "topicId": "79",
+    "topicName": "Speech to Text",
+    "status": "active"
+  },
+  {
+    "topicId": "80",
+    "topicName": "Text to Speech",
+    "status": "active"
+  },
+  {
+    "topicId": "81",
+    "topicName": "Examples: Stable Diffusion, DALL-E",
+    "status": "active"
+  },
+  {
+    "topicId": "82",
+    "topicName": "Image Embeddings",
+    "status": "active"
+  },
+  {
+    "topicId": "83",
+    "topicName": "Vision Language Models",
+    "status": "active"
+  },
+  {
+    "topicId": "84",
+    "topicName": "Multimodal Applications",
+    "status": "active"
+  },
+  {
+    "topicId": "85",
+    "topicName": "What are AI Agents",
+    "status": "active"
+  },
+  {
+    "topicId": "86",
+    "topicName": "Autonomous AI Systems",
+    "status": "active"
+  },
+  {
+    "topicId": "87",
+    "topicName": "Tool Calling",
+    "status": "active"
+  },
+  {
+    "topicId": "88",
+    "topicName": "Memory in Agents",
+    "status": "active"
+  },
+  {
+    "topicId": "89",
+    "topicName": "Multi Agent Systems",
+    "status": "active"
+  },
+  {
+    "topicId": "90",
+    "topicName": "Tools: AutoGPT, CrewAI",
+    "status": "active"
+  },
+  {
+    "topicId": "91",
+    "topicName": "Agent Planning",
+    "status": "active"
+  },
+  {
+    "topicId": "92",
+    "topicName": "Agent Execution Loops",
+    "status": "active"
+  },
+  {
+    "topicId": "93",
+    "topicName": "AI Agent Use Cases",
+    "status": "active"
+  },
+  {
+    "topicId": "94",
+    "topicName": "Limitations of AI Agents",
+    "status": "active"
+  },
+  {
+    "topicId": "95",
+    "topicName": "Future of AI Agents",
+    "status": "active"
+  },
+  {
+    "topicId": "96",
+    "topicName": "LLMOps",
+    "status": "active"
+  },
+  {
+    "topicId": "97",
+    "topicName": "Model Evaluation",
+    "status": "active"
+  },
+  {
+    "topicId": "98",
+    "topicName": "Guardrails",
+    "status": "active"
+  },
+  {
+    "topicId": "99",
+    "topicName": "AI Monitoring",
+    "status": "active"
+  },
+  {
+    "topicId": "100",
+    "topicName": "Cost Optimization",
+    "status": "active"
+  },
+  {
+    "topicId": "101",
+    "topicName": "Cloud Tools: Amazon Bedrock",
+    "status": "active"
+  },
+  {
+    "topicId": "102",
+    "topicName": "Scaling AI Systems",
+    "status": "active"
+  },
+  {
+    "topicId": "103",
+    "topicName": "Security in GenAI",
+    "status": "active"
+  },
+  {
+    "topicId": "104",
+    "topicName": "Data Privacy in AI",
+    "status": "active"
+  },
+  {
+    "topicId": "105",
+    "topicName": "Responsible AI",
+    "status": "active"
+  },
+  {
+    "topicId": "106",
+    "topicName": "Future of Generative AI",
+    "status": "active"
   }
-}
+]

@@ -18,7 +18,8 @@ Requirements:
 * Minimal text
 * Clean layout
 * Suitable for LinkedIn
-* Blue and white theme
+* Black background (dark theme)
+* White or light accent colors for text, icons, and diagrams (high contrast on black)
 * High quality
 * No logos
 * No watermarks

@@ -48,8 +48,9 @@ AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 BEDROCK_TEXT_MODEL_ID = os.getenv("BEDROCK_TEXT_MODEL_ID", "amazon.nova-pro-v1:0")
 BEDROCK_IMAGE_MODEL_ID = os.getenv("BEDROCK_IMAGE_MODEL_ID", "amazon.nova-canvas-v1:0")
 
-DYNAMODB_TABLE_NAME = os.getenv("DYNAMODB_TABLE_NAME", "LinkedInTopics")
+# DYNAMODB_TABLE_NAME = os.getenv("DYNAMODB_TABLE_NAME", "LinkedInTopics")
 TOPIC_ID = os.getenv("TOPIC_ID", "1")
+TOPICS_FILE = get_path("TOPICS_FILE", "topics.json")
 
 DRAFTS_FILE = get_path("DRAFTS_FILE", "_drafts.json")
 POST_DIR = get_path("POST_DIR", "agents/writer/post")
