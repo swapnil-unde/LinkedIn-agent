@@ -18,6 +18,11 @@ from agents.approval.prompt import (
     rejection_message,
 )
 from agents.linkedin.agent import post_to_linkedin
+from agents.news_researcher.agent import (
+    build_news_prompt_package,
+    finalize_news_draft,
+    format_sources_for_telegram,
+)
 from config import (
     DRAFTS_FILE,
     IMAGES_DIR,
@@ -46,12 +51,13 @@ HELP_MESSAGE = """LinkedIn Agent commands
 
 /next — Research + write next active topic and send draft here
 /generate — Same as /next
+/news <topic> — Search live news, send draft with Approve/Reject, then upload image and approve
 /status — Show next active topic in topics.json
 /help — Show this message
 
-Workflow after /next:
+Workflow after /next or /news:
 1. Create image from the image prompt message
-2. Upload photo here (caption = topic id if needed)
+2. Upload photo here (caption = draft id if needed)
 3. Press Approve on the draft message
 """
 
@@ -249,6 +255,61 @@ def handle_pipeline_command(chat_id, topic_id=None):
         _pipeline_running = False
 
 
+def parse_news_inputs(args):
+    topic = " ".join(args).strip()
+    if not topic:
+        raise ValueError("Usage: /news <topic to search>")
+
+    if len(topic) < 3:
+        raise ValueError("Topic is too short. Please provide a descriptive topic.")
+
+    return topic
+
+
+def handle_news_command(chat_id, args):
+    global _pipeline_running
+
+    if _pipeline_running:
+        send_telegram_message(
+            chat_id,
+            "Another generation is already running. Please wait for it to finish.",
+        )
+        return
+
+    try:
+        topic = parse_news_inputs(args)
+    except ValueError as exc:
+        send_telegram_message(chat_id, str(exc))
+        return
+
+    try:
+        send_telegram_message(
+            chat_id,
+            f"Searching latest news for:\n{topic}\n\n"
+            "This may take a minute...",
+        )
+        _pipeline_running = True
+        package = build_news_prompt_package(topic=topic)
+        send_telegram_message(
+            chat_id,
+            "News research notes:\n\n" + (package.get("research_notes") or "No notes generated."),
+        )
+        draft_id, _filename = finalize_news_draft(topic, package)
+        send_telegram_message(chat_id, format_sources_for_telegram(package["sources"]))
+        send_telegram_message(
+            chat_id,
+            f"News draft ready (id: {draft_id}).\n\n"
+            "1. Check the draft message with Approve/Reject buttons\n"
+            "2. Create image from the image prompt\n"
+            "3. Upload photo here, then press Approve",
+        )
+    except Exception as exc:
+        send_telegram_message(chat_id, f"/news failed.\n\n{exc}")
+        print(f"News command error: {exc}")
+    finally:
+        _pipeline_running = False
+
+
 def handle_status_command(chat_id):
     try:
         topic = get_next_active_topic()
@@ -278,6 +339,8 @@ def handle_command_message(message, chat_id):
         send_telegram_message(chat_id, HELP_MESSAGE)
     elif command == "/status":
         handle_status_command(chat_id)
+    elif command == "/news":
+        handle_news_command(chat_id, args)
     elif command in PIPELINE_COMMANDS:
         topic_id = args[0] if args else None
         handle_pipeline_command(chat_id, topic_id=topic_id)
@@ -406,7 +469,8 @@ def handle_approval(topic_id, chat_id, message_id):
         save_drafts(drafts)
 
         clear_approval_buttons(chat_id, message_id)
-        update_topic_status(topic_id, STATUS_POSTED)
+        if draft.get("type") != "news":
+            update_topic_status(topic_id, STATUS_POSTED)
         send_telegram_message(
             chat_id,
             approval_success_message(topic_id, topic_name, image_path),
@@ -434,10 +498,11 @@ def handle_rejection(topic_id, chat_id, message_id):
     save_drafts(drafts)
 
     clear_approval_buttons(chat_id, message_id)
-    try:
-        update_topic_status(topic_id, STATUS_REJECTED)
-    except LookupError as exc:
-        print(f"Warning: {exc}")
+    if draft.get("type") != "news":
+        try:
+            update_topic_status(topic_id, STATUS_REJECTED)
+        except LookupError as exc:
+            print(f"Warning: {exc}")
     send_telegram_message(chat_id, rejection_message(topic_id))
 
 
@@ -466,7 +531,7 @@ def run_approval_agent():
     offset = None
     print("Starting Telegram Approval Agent...")
     print("Run only ONE approval agent at a time for this bot token.")
-    print("Telegram commands: /next /generate /status /help")
+    print("Telegram commands: /next /generate /news /status /help")
 
     while True:
         try:

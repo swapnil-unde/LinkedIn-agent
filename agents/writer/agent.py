@@ -68,8 +68,11 @@ def generate_linkedin_post(topic_id, topic, research):
     with open(filename, "w", encoding="utf-8") as f:
         f.write(post)
 
-    print("\nGenerated LinkedIn Post:\n")
+    print("\n" + "=" * 60)
+    print("LINKEDIN POST")
+    print("=" * 60)
     print(post)
+    print("=" * 60)
     print(f"\nSaved post to {filename}")
 
     drafts = load_drafts()

@@ -25,7 +25,7 @@ def send_telegram_text(chat_id, text):
         )
 
 
-def send_for_approval(topic_id, topic, post, filename):
+def send_draft_for_approval(draft_id, topic, post, image_prompt=None):
     """Send LinkedIn draft to Telegram for approval via inline buttons."""
     if not TELEGRAM_BOT_TOKEN:
         print("Error: TELEGRAM_BOT_TOKEN not configured in .env")
@@ -43,11 +43,11 @@ def send_for_approval(topic_id, topic, post, filename):
                 [
                     {
                         "text": "Approve",
-                        "callback_data": f"approve:{topic_id}",
+                        "callback_data": f"approve:{draft_id}",
                     },
                     {
                         "text": "Reject",
-                        "callback_data": f"reject:{topic_id}",
+                        "callback_data": f"reject:{draft_id}",
                     },
                 ]
             ]
@@ -60,12 +60,17 @@ def send_for_approval(topic_id, topic, post, filename):
 
         if response.status_code == 200:
             print("Draft sent to Telegram successfully.")
-            image_prompt = build_image_prompt(topic, post)
+            final_image_prompt = image_prompt or build_image_prompt(topic, post)
+            print("\n" + "=" * 60)
+            print("IMAGE PROMPT")
+            print("=" * 60)
+            print(final_image_prompt)
+            print("=" * 60 + "\n")
             send_telegram_text(
                 TELEGRAM_CHAT_ID,
                 (
                     "Image prompt (create image manually, upload it here, then press Approve):\n\n"
-                    f"{image_prompt}"
+                    f"{final_image_prompt}"
                 ),
             )
             print("Image prompt sent to Telegram.")
@@ -76,3 +81,8 @@ def send_for_approval(topic_id, topic, post, filename):
     except Exception as exc:
         print(f"Error sending to Telegram: {exc}")
         return None
+
+
+def send_for_approval(topic_id, topic, post, filename):
+    """Send series-topic draft to Telegram for approval."""
+    return send_draft_for_approval(topic_id, topic, post)

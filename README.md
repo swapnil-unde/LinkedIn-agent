@@ -92,6 +92,11 @@ Copy `.env.example` to `.env` and fill in:
 |----------|---------|
 | `TELEGRAM_BOT_TOKEN` | Telegram bot token |
 | `TELEGRAM_CHAT_ID` | Your chat ID (only this chat can approve/upload) |
+| `NEWS_API_KEY` | API key for `/news` live web/news search |
+| `NEWS_API_BASE_URL` | News API base URL (default `https://newsapi.org/v2`) |
+| `NEWS_MAX_ARTICLES` | Max articles to fetch for `/news` (default `6`) |
+| `DEFAULT_PERSON_NAME` | Default person name injected into image prompt branding |
+| `DEFAULT_LOGO_TEXT` | Default logo text injected into image prompt branding |
 | `LINKEDIN_ACCESS_TOKEN` | LinkedIn API bearer token |
 | `LINKEDIN_PERSON_ID` | Numeric person ID for `urn:li:person:{id}` |
 | `AWS_REGION` | Bedrock region (e.g. `us-east-1`) |
@@ -128,6 +133,7 @@ The pipeline picks the **first `active` row top-to-bottom** (line by line). Afte
 |---------|--------|
 | `/next` or `/generate` | Run pipeline for **first active** topic in `topics.json` |
 | `/next 17` | Run pipeline for topic id **17** (must be `active`) |
+| `/news <topic to search>` | Search latest news, send draft with Approve/Reject + image prompt + sources; upload image and approve to post |
 | `/status` | Show which topic is next |
 | `/help` | List commands |
 
